@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -39,7 +39,7 @@ type Card struct {
 	FullArt         bool     `json:"full_art"`
 	Games           []string `json:"games"`
 	HighresImage    bool     `json:"highres_image"`
-	ID              string   `json:"id" bson:"_id"`
+	ID              string   `json:"id"                bson:"_id"`
 	IllustrationID  string   `json:"illustration_id"`
 	ImageStatus     string   `json:"image_status"`
 	ImageUris       struct {
@@ -135,12 +135,12 @@ func (c Card) getValue(foil bool) float64 {
 
 type PriceEntry struct {
 	Date      primitive.DateTime `bson:"date"`
-	Eur       float64            `json:"eur,string" bson:"eur,float64"`
-	EurFoil   float64            `json:"eur_foil,string" bson:"eur_foil,float64"`
-	Tix       float64            `json:"tix,string" bson:"tix,float64"`
-	Usd       float64            `json:"usd,string" bson:"usd,float64"`
-	UsdEtched float64            `json:"usd_etched,string" bson:"usd_etched,float64"`
-	UsdFoil   float64            `json:"usd_foil,string" bson:"usd_foil,float64"`
+	Eur       float64            `bson:"eur,float64"        json:"eur,string"`
+	EurFoil   float64            `bson:"eur_foil,float64"   json:"eur_foil,string"`
+	Tix       float64            `bson:"tix,float64"        json:"tix,string"`
+	Usd       float64            `bson:"usd,float64"        json:"usd,string"`
+	UsdEtched float64            `bson:"usd_etched,float64" json:"usd_etched,string"`
+	UsdFoil   float64            `bson:"usd_foil,float64"   json:"usd_foil,string"`
 }
 
 // Sets
@@ -153,21 +153,21 @@ type Set struct {
 	SerraPrices  []PriceEntry       `bson:"serra_prices"`
 	SerraCreated primitive.DateTime `bson:"serra_created"`
 	SerraUpdated primitive.DateTime `bson:"serra_updated"`
-	CardCount    int64              `json:"card_count" bson:"cardcount"`
-	Code         string             `json:"code"`
-	Digital      bool               `json:"digital"`
-	FoilOnly     bool               `json:"foil_only"`
-	IconSvgURI   string             `json:"icon_svg_uri"`
-	ID           string             `json:"id" bson:"_id"`
-	Name         string             `json:"name"`
-	NonfoilOnly  bool               `json:"nonfoil_only"`
-	Object       string             `json:"object"`
-	ReleasedAt   string             `json:"released_at"`
-	ScryfallURI  string             `json:"scryfall_uri"`
-	SearchURI    string             `json:"search_uri"`
-	SetType      string             `json:"set_type"`
-	TcgplayerID  int64              `json:"tcgplayer_id"`
-	URI          string             `json:"uri"`
+	CardCount    int64              `bson:"cardcount"     json:"card_count"`
+	Code         string             `                     json:"code"`
+	Digital      bool               `                     json:"digital"`
+	FoilOnly     bool               `                     json:"foil_only"`
+	IconSvgURI   string             `                     json:"icon_svg_uri"`
+	ID           string             `bson:"_id"           json:"id"`
+	Name         string             `                     json:"name"`
+	NonfoilOnly  bool               `                     json:"nonfoil_only"`
+	Object       string             `                     json:"object"`
+	ReleasedAt   string             `                     json:"released_at"`
+	ScryfallURI  string             `                     json:"scryfall_uri"`
+	SearchURI    string             `                     json:"search_uri"`
+	SetType      string             `                     json:"set_type"`
+	TcgplayerID  int64              `                     json:"tcgplayer_id"`
+	URI          string             `                     json:"uri"`
 }
 
 func fetchCard(setName, collectorNumber string) (*Card, error) {
@@ -182,7 +182,7 @@ func fetchCard(setName, collectorNumber string) (*Card, error) {
 	}
 
 	//We Read the response body on the line below.
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalf("%s", err)
 		return &Card{}, err
@@ -220,7 +220,7 @@ func fetchSets() (*SetList, error) {
 	}
 
 	//We Read the response body on the line below.
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
 		return &SetList{}, err

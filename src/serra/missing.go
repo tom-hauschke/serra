@@ -27,7 +27,14 @@ cards you dont own (yet) :)`,
 		defer storageDisconnect(client)
 
 		// fetch all cards in set
-		cards, err := coll.storageFind(bson.D{{"set", setName[0]}}, bson.D{{"collectornumber", 1}}, 0, 0)
+		cards, err := coll.storageFind(bson.D{
+			{Key: "set", Value: setName[0]}},
+			bson.D{
+				{Key: "collectornumber", Value: 1},
+			},
+			0,
+			0,
+		)
 		if (err != nil) || len(cards) == 0 {
 			l.Errorf("Set %s not found or no card in your collection.", setName[0])
 			return err
@@ -35,7 +42,11 @@ cards you dont own (yet) :)`,
 
 		// fetch set informations
 		setcoll := &Collection{client.Database("serra").Collection("sets")}
-		sets, _ := setcoll.storageFindSet(bson.D{{"code", setName[0]}}, bson.D{{"_id", 1}})
+		sets, _ := setcoll.storageFindSet(bson.D{
+			{Key: "code", Value: setName[0]},
+		}, bson.D{
+			{Key: "_id", Value: 1},
+		})
 		set := sets[0]
 
 		fmt.Printf("Missing cards in %s\n", sets[0].Name)
@@ -76,7 +87,19 @@ cards you dont own (yet) :)`,
 		})
 
 		for _, card := range missingCards {
-			fmt.Printf("%s%s/%s%s %s%.02f%s%s\t%s (%s)\n", Purple, card.Set, card.CollectorNumber, Reset, Green, card.getValue(false), Reset, getCurrency(), card.Name, card.SetName)
+			fmt.Printf(
+				"%s%s/%s%s %s%.02f%s%s\t%s (%s)\n",
+				Purple,
+				card.Set,
+				card.CollectorNumber,
+				Reset,
+				Green,
+				card.getValue(false),
+				Reset,
+				getCurrency(),
+				card.Name,
+				card.SetName,
+			)
 		}
 
 		return nil

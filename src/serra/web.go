@@ -71,22 +71,30 @@ func landingPage(c *gin.Context) {
 		coll := &Collection{client.Database("serra").Collection("cards")}
 
 		if query.Set != "" {
-			filter = append(filter, bson.E{"set", query.Set})
+			filter = append(filter, bson.E{Key: "set", Value: query.Set})
 		}
 
 		if query.Name != "" {
-			filter = append(filter, bson.E{"name", bson.D{{"$regex", ".*" + query.Name + ".*"}, {"$options", "i"}}})
+			filter = append(filter, bson.E{
+				Key: "name", Value: bson.D{
+					{Key: "$regex", Value: ".*" + query.Name + ".*"},
+					{Key: "$options", Value: "i"},
+				},
+			})
 		}
 
 		counts, _ := coll.storageAggregate(mongo.Pipeline{
 			bson.D{
-				{"$match", filter},
+				{Key: "$match", Value: filter},
 			},
 			bson.D{
-				{"$group", bson.D{
-					{"_id", nil},
-					{"count", bson.D{{"$sum", 1}}},
-				}}},
+				{Key: "$group", Value: bson.D{
+					{Key: "_id", Value: nil},
+					{Key: "count", Value: bson.D{
+						{Key: "$sum", Value: 1},
+					}},
+				}},
+			},
 		})
 		defer storageDisconnect(client)
 		numCards := counts[0]["count"].(int32)

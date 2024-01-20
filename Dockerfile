@@ -16,6 +16,7 @@ RUN go build -ldflags "-X github.com/noqqe/serra/src/serra.Version=`git describe
 
 # copy
 FROM scratch
+USER serra
 WORKDIR /go/src/app
 COPY --from=builder /go/src/app/serra /go/src/app/serra
 COPY templates /go/src/app/templates

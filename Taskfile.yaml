@@ -5,7 +5,7 @@ version: '3'
 tasks:
   build:
     cmds:
-      - go build -ldflags "-X github.com/noqqe/serra/src/serra.Version=`git describe --tags`"  -v serra.go
+      - go build -ldflags "-X github.com/tom-hauschke/serra/src/serra.Version=`git describe --tags`"  -v serra.go
     sources:
       - "src/serra/**/*.go"
       - "serra.go"
@@ -19,8 +19,8 @@ tasks:
       - read -p "Version v1.1.1 " version ; git tag $version
       - git push --tags
       - goreleaser release --clean
-      - docker build . -t ghcr.io/noqqe/serra:`git describe --tags`
-      - docker push ghcr.io/noqqe/serra:`git describe --tags`
+      - docker build . -t ghcr.io/tom-hauschke/serra:`git describe --tags`
+      - docker push ghcr.io/tom-hauschke/serra:`git describe --tags`
 
   default:
     cmds:

@@ -34,20 +34,56 @@ var updateCmd = &cobra.Command{
 		totalcoll := &Collection{client.Database("serra").Collection("total")}
 
 		// predefine query for set analysis. used for total stats later
-		projectStage := bson.D{{"$project",
-			bson.D{
-				{"serra_count", true},
-				{"serra_count_foil", true},
-				{"set", true},
-				{"last_price", bson.D{{"$arrayElemAt", bson.A{"$serra_prices", -1}}}}}}}
+		projectStage := bson.D{
+			{Key: "$project", Value: bson.D{
+				{Key: "serra_count", Value: true},
+				{Key: "serra_count_foil", Value: true},
+				{Key: "set", Value: true},
+				{Key: "last_price", Value: bson.D{
+					{Key: "$arrayElemAt", Value: bson.A{
+						"$serra_prices",
+						-1,
+					}},
+				}},
+			}},
+		}
 		groupStage := bson.D{
-			{"$group", bson.D{
-				{"_id", ""},
-				{"eur", bson.D{{"$sum", bson.D{{"$multiply", bson.A{"$last_price.eur", "$serra_count"}}}}}},
-				{"eurfoil", bson.D{{"$sum", bson.D{{"$multiply", bson.A{"$last_price.eur_foil", "$serra_count_foil"}}}}}},
-				{"usd", bson.D{{"$sum", bson.D{{"$multiply", bson.A{"$last_price.usd", "$serra_count"}}}}}},
-				{"usdfoil", bson.D{{"$sum", bson.D{{"$multiply", bson.A{"$last_price.usd_foil", "$serra_count_foil"}}}}}},
-			}}}
+			{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: ""},
+				{Key: "eur", Value: bson.D{
+					{Key: "$sum", Value: bson.D{
+						{Key: "$multiply", Value: bson.A{
+							"$last_price.eur",
+							"$serra_count",
+						}},
+					}},
+				}},
+				{Key: "eurfoil", Value: bson.D{
+					{Key: "$sum", Value: bson.D{
+						{Key: "$multiply", Value: bson.A{
+							"$last_price.eur_foil",
+							"$serra_count_foil",
+						}},
+					}},
+				}},
+				{Key: "usd", Value: bson.D{
+					{Key: "$sum", Value: bson.D{
+						{Key: "$multiply", Value: bson.A{
+							"$last_price.usd",
+							"$serra_count",
+						}},
+					}},
+				}},
+				{Key: "usdfoil", Value: bson.D{
+					{Key: "$sum", Value: bson.D{
+						{Key: "$multiply", Value: bson.A{
+							"$last_price.usd_foil",
+							"$serra_count_foil",
+						}},
+					}},
+				}},
+			}},
+		}
 
 		sets, _ := fetchSets()
 		for _, set := range sets.Data {
@@ -57,7 +93,7 @@ var updateCmd = &cobra.Command{
 			set.SerraPrices = []PriceEntry{}
 			setscoll.storageAddSet(&set)
 
-			cards, _ := coll.storageFind(bson.D{{"set", set.Code}}, bson.D{{"_id", 1}}, 0, 0)
+			cards, _ := coll.storageFind(bson.D{{Key: "set", Value: set.Code}}, bson.D{{Key: "_id", Value: 1}}, 0, 0)
 
 			// if no cards in collection for this set, skip it
 			if len(cards) == 0 {
@@ -89,17 +125,34 @@ var updateCmd = &cobra.Command{
 				updatedCard.Prices.Date = primitive.NewDateTimeFromTime(time.Now())
 
 				update := bson.M{
-					"$set":  bson.M{"serra_updated": primitive.NewDateTimeFromTime(time.Now()), "prices": updatedCard.Prices, "cmc": updatedCard.Cmc, "cardmarketid": updatedCard.CardmarketID, "tcgplayerid": updatedCard.TCGPlayerID},
+					"$set": bson.M{
+						"serra_updated": primitive.NewDateTimeFromTime(time.Now()),
+						"prices":        updatedCard.Prices,
+						"cmc":           updatedCard.Cmc,
+						"cardmarketid":  updatedCard.CardmarketID,
+						"tcgplayerid":   updatedCard.TCGPlayerID,
+					},
 					"$push": bson.M{"serra_prices": updatedCard.Prices},
 				}
-				coll.storageUpdate(bson.M{"_id": bson.M{"$eq": card.ID}}, update)
+				coll.storageUpdate(
+					bson.M{
+						"_id": bson.M{
+							"$eq": card.ID,
+						},
+					},
+					update,
+				)
 			}
 			fmt.Println()
 
 			// update set value sum
 
 			// calculate value summary
-			matchStage := bson.D{{"$match", bson.D{{"set", set.Code}}}}
+			matchStage := bson.D{
+				{Key: "$match", Value: bson.D{
+					{Key: "set", Value: set.Code},
+				}},
+			}
 			setValue, _ := coll.storageAggregate(mongo.Pipeline{matchStage, projectStage, groupStage})
 
 			p := PriceEntry{}
@@ -130,7 +183,14 @@ var updateCmd = &cobra.Command{
 		tmpCard := Card{}
 		tmpCard.Prices = t
 
-		fmt.Printf("\n%sUpdating total value of collection to: %s%.02f%s%s\n", Green, Yellow, tmpCard.getValue(false)+tmpCard.getValue(true), getCurrency(), Reset)
+		fmt.Printf(
+			"\n%sUpdating total value of collection to: %s%.02f%s%s\n",
+			Green,
+			Yellow,
+			tmpCard.getValue(false)+tmpCard.getValue(true),
+			getCurrency(),
+			Reset,
+		)
 		totalcoll.storageAddTotal(t)
 
 		return nil

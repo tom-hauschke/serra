@@ -10,14 +10,17 @@ import (
 )
 
 func init() {
-	cardCmd.Flags().StringVarP(&rarity, "rarity", "r", "", "Filter by rarity of cards (mythic, rare, uncommon, common)")
+	cardCmd.Flags().
+		StringVarP(&rarity, "rarity", "r", "", "Filter by rarity of cards (mythic, rare, uncommon, common)")
 	cardCmd.Flags().StringVarP(&set, "set", "e", "", "Filter by set code (usg/mmq/vow)")
-	cardCmd.Flags().StringVarP(&sortby, "sort", "s", "name", "How to sort cards (value/number/name/added)")
+	cardCmd.Flags().
+		StringVarP(&sortby, "sort", "s", "name", "How to sort cards (value/number/name/added)")
 	cardCmd.Flags().StringVarP(&name, "name", "n", "", "Name of the card (regex compatible)")
 	cardCmd.Flags().StringVarP(&color, "color", "i", "", "Color identity of card (w,u,b,r,g)")
 	cardCmd.Flags().StringVarP(&oracle, "oracle", "o", "", "Contains string in card text")
 	cardCmd.Flags().StringVarP(&cardType, "type", "t", "", "Contains string in card type line")
-	cardCmd.Flags().Int64VarP(&count, "min-count", "c", 0, "Occource more than X in your collection")
+	cardCmd.Flags().
+		Int64VarP(&count, "min-count", "c", 0, "Occurs more than X in your collection")
 	cardCmd.Flags().BoolVarP(&detail, "detail", "d", false, "Show details for cards (url)")
 	cardCmd.Flags().BoolVarP(&reserved, "reserved", "w", false, "If card is on reserved list")
 	cardCmd.Flags().BoolVarP(&foil, "foil", "f", false, "If card is foil list")
@@ -55,7 +58,17 @@ func ShowCard(cardids []string) {
 			continue
 		}
 
-		cards, _ := coll.storageFind(bson.D{{"set", strings.Split(v, "/")[0]}, {"collectornumber", strings.Split(v, "/")[1]}}, bson.D{{"name", 1}}, 0, 0)
+		cards, _ := coll.storageFind(
+			bson.D{
+				{Key: "set", Value: strings.Split(v, "/")[0]},
+				{Key: "collectornumber", Value: strings.Split(v, "/")[1]},
+			},
+			bson.D{
+				{Key: "name", Value: 1},
+			},
+			0,
+			0,
+		)
 
 		for _, card := range cards {
 			showCardDetails(&card)
@@ -63,7 +76,11 @@ func ShowCard(cardids []string) {
 	}
 }
 
-func Cards(rarity, set, sortby, name, oracle, cardType string, reserved, foil bool, skip, limit int64) []Card {
+func Cards(
+	rarity, set, sortby, name, oracle, cardType string,
+	reserved, foil bool,
+	skip, limit int64,
+) []Card {
 	client := storageConnect()
 	coll := &Collection{client.Database("serra").Collection("cards")}
 	defer storageDisconnect(client)
@@ -72,58 +89,89 @@ func Cards(rarity, set, sortby, name, oracle, cardType string, reserved, foil bo
 
 	switch rarity {
 	case "uncommon":
-		filter = append(filter, bson.E{"rarity", "uncommon"})
+		filter = append(filter, bson.E{Key: "rarity", Value: "uncommon"})
 	case "common":
-		filter = append(filter, bson.E{"rarity", "common"})
+		filter = append(filter, bson.E{Key: "rarity", Value: "common"})
 	case "rare":
-		filter = append(filter, bson.E{"rarity", "rare"})
+		filter = append(filter, bson.E{Key: "rarity", Value: "rare"})
 	}
 
 	var sortStage bson.D
 	switch sortby {
 	case "value":
 		if getCurrency() == EUR {
-			sortStage = bson.D{{"prices.eur", 1}}
+			sortStage = bson.D{{Key: "prices.eur", Value: 1}}
 		} else {
-			sortStage = bson.D{{"prices.usd", 1}}
+			sortStage = bson.D{{Key: "prices.usd", Value: 1}}
 		}
 	case "number":
-		sortStage = bson.D{{"collectornumber", 1}}
+		sortStage = bson.D{{Key: "collectornumber", Value: 1}}
 	case "name":
-		sortStage = bson.D{{"name", 1}}
+		sortStage = bson.D{{Key: "name", Value: 1}}
 	case "added":
-		sortStage = bson.D{{"serra_created", 1}}
+		sortStage = bson.D{{Key: "serra_created", Value: 1}}
 	default:
-		sortStage = bson.D{{"name", 1}}
+		sortStage = bson.D{{Key: "name", Value: 1}}
 	}
 
 	if len(set) > 0 {
-		filter = append(filter, bson.E{"set", set})
+		filter = append(filter, bson.E{Key: "set", Value: set})
 	}
 
 	if len(name) > 0 {
-		filter = append(filter, bson.E{"name", bson.D{{"$regex", ".*" + name + ".*"}, {"$options", "i"}}})
+		filter = append(
+			filter,
+			bson.E{
+				Key: "name", Value: bson.D{
+					{Key: "$regex", Value: ".*" + name + ".*"},
+					{Key: "$options", Value: "i"},
+				},
+			},
+		)
 	}
 
 	if len(oracle) > 0 {
-		filter = append(filter, bson.E{"oracletext", bson.D{{"$regex", ".*" + oracle + ".*"}, {"$options", "i"}}})
+		filter = append(
+			filter,
+			bson.E{
+				Key: "oracletext", Value: bson.D{
+					{Key: "$regex", Value: ".*" + oracle + ".*"},
+					{Key: "$options", Value: "i"},
+				},
+			},
+		)
 	}
 
 	if len(cardType) > 0 {
-		filter = append(filter, bson.E{"typeline", bson.D{{"$regex", ".*" + cardType + ".*"}, {"$options", "i"}}})
+		filter = append(
+			filter,
+			bson.E{
+				Key: "typeline", Value: bson.D{
+					{Key: "$regex", Value: ".*" + cardType + ".*"},
+					{Key: "$options", Value: "i"},
+				},
+			},
+		)
 	}
 
 	if len(color) > 0 {
 		colorArr := strings.Split(strings.ToUpper(color), ",")
-		filter = append(filter, bson.E{"coloridentity", colorArr})
+		filter = append(filter, bson.E{Key: "coloridentity", Value: colorArr})
 	}
 
 	if reserved {
-		filter = append(filter, bson.E{"reserved", true})
+		filter = append(filter, bson.E{Key: "reserved", Value: true})
 	}
 
 	if foil {
-		filter = append(filter, bson.E{"serra_count_foil", bson.D{{"$gt", 0}}})
+		filter = append(
+			filter,
+			bson.E{
+				Key: "serra_count_foil", Value: bson.D{
+					{Key: "$gt", Value: 0},
+				},
+			},
+		)
 	}
 
 	cards, _ := coll.storageFind(filter, sortStage, skip, limit)
@@ -132,7 +180,11 @@ func Cards(rarity, set, sortby, name, oracle, cardType string, reserved, foil bo
 	// want it to be sorted numerically ... 1,2,3,10,11,100.
 	if sortby == "number" {
 		sort.Slice(cards, func(i, j int) bool {
-			return filterForDigits(cards[i].CollectorNumber) < filterForDigits(cards[j].CollectorNumber)
+			return filterForDigits(
+				cards[i].CollectorNumber,
+			) < filterForDigits(
+				cards[j].CollectorNumber,
+			)
 		})
 	}
 
@@ -151,16 +203,41 @@ func Cards(rarity, set, sortby, name, oracle, cardType string, reserved, foil bo
 }
 
 func showCardList(cards []Card, detail bool) {
-
 	var total float64
 	if detail {
 		for _, card := range cards {
-			fmt.Printf("* %dx %s%s%s (%s/%s) %s%.2f%s %s %s %s\n", card.SerraCount+card.SerraCountFoil+card.SerraCountEtched, Purple, card.Name, Reset, card.Set, card.CollectorNumber, Yellow, card.getValue(false), getCurrency(), Background, strings.Replace(card.ScryfallURI, "?utm_source=api", "", 1), Reset)
+			fmt.Printf(
+				"* %dx %s%s%s (%s/%s) %s%.2f%s %s %s %s\n",
+				card.SerraCount+card.SerraCountFoil+card.SerraCountEtched,
+				Purple,
+				card.Name,
+				Reset,
+				card.Set,
+				card.CollectorNumber,
+				Yellow,
+				card.getValue(false),
+				getCurrency(),
+				Background,
+				strings.Replace(card.ScryfallURI, "?utm_source=api", "", 1),
+				Reset,
+			)
 			total = total + card.getValue(false)*float64(card.SerraCount) + card.getValue(true)*float64(card.SerraCountFoil)
 		}
 	} else {
 		for _, card := range cards {
-			fmt.Printf("* %dx %s%s%s (%s/%s) %s%.2f%s%s\n", card.SerraCount+card.SerraCountFoil+card.SerraCountEtched, Purple, card.Name, Reset, card.Set, card.CollectorNumber, Yellow, card.getValue(false), getCurrency(), Reset)
+			fmt.Printf(
+				"* %dx %s%s%s (%s/%s) %s%.2f%s%s\n",
+				card.SerraCount+card.SerraCountFoil+card.SerraCountEtched,
+				Purple,
+				card.Name,
+				Reset,
+				card.Set,
+				card.CollectorNumber,
+				Yellow,
+				card.getValue(false),
+				getCurrency(),
+				Reset,
+			)
 			total = total + card.getValue(false)*float64(card.SerraCount) + card.getValue(true)*float64(card.SerraCountFoil)
 		}
 	}
@@ -176,9 +253,23 @@ func showCardDetails(card *Card) error {
 	fmt.Printf("Scryfall: %s\n", strings.Replace(card.ScryfallURI, "?utm_source=api", "", 1))
 
 	fmt.Printf("\n%sCurrent Value%s\n", Green, Reset)
-	fmt.Printf("* Normal: %dx %s%.2f%s%s\n", card.SerraCount, Yellow, card.getValue(false), getCurrency(), Reset)
+	fmt.Printf(
+		"* Normal: %dx %s%.2f%s%s\n",
+		card.SerraCount,
+		Yellow,
+		card.getValue(false),
+		getCurrency(),
+		Reset,
+	)
 	if card.SerraCountFoil > 0 {
-		fmt.Printf("* Foil: %dx %s%.2f%s%s\n", card.SerraCountFoil, Yellow, card.getValue(true), getCurrency(), Reset)
+		fmt.Printf(
+			"* Foil: %dx %s%.2f%s%s\n",
+			card.SerraCountFoil,
+			Yellow,
+			card.getValue(true),
+			getCurrency(),
+			Reset,
+		)
 	}
 
 	fmt.Printf("\n%sValue History%s\n", Green, Reset)

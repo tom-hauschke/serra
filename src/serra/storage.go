@@ -14,7 +14,7 @@ import (
 
 type Total struct {
 	ID    string       `json:"id" bson:"_id"`
-	Value []PriceEntry `bson:"value"`
+	Value []PriceEntry `          bson:"value"`
 }
 
 // https://siongui.github.io/2017/02/11/go-add-method-function-to-type-in-external-package/
@@ -85,7 +85,7 @@ func (coll Collection) storageAddTotal(p PriceEntry) error {
 	coll.InsertOne(context.TODO(), Total{ID: "1", Value: []PriceEntry{}})
 
 	// update object as intended...
-	filter := bson.D{{"_id", "1"}}
+	filter := bson.D{{Key: "_id", Value: "1"}}
 	update := bson.M{"$push": bson.M{"value": p}}
 
 	_, err := coll.UpdateOne(
@@ -138,11 +138,10 @@ func (coll Collection) storageFindSet(filter, sort bson.D) ([]Set, error) {
 
 func (coll Collection) storageFindTotal() (Total, error) {
 	var total Total
-	l := Logger()
 
-	err := coll.FindOne(context.TODO(), bson.D{{"_id", "1"}}).Decode(&total)
+	err := coll.FindOne(context.TODO(), bson.D{{Key: "_id", Value: "1"}}).Decode(&total)
 	if err != nil {
-		l.Fatalf("Could not query total data due to connection errors to database: %s", err.Error())
+		return *new(Total), err
 	}
 
 	return total, nil

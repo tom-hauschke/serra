@@ -62,121 +62,173 @@ func Gains(limit float64, sort int) error {
 	}
 
 	raisePipeline := mongo.Pipeline{
-		bson.D{{"$project",
-			bson.D{
-				{"name", true},
-				{"set", true},
-				{"collectornumber", true},
-				{"old",
-					bson.D{{"$arrayElemAt",
-						bson.A{currencyField, old},
+		bson.D{
+			{Key: "$project", Value: bson.D{
+				{Key: "name", Value: true},
+				{Key: "set", Value: true},
+				{Key: "collectornumber", Value: true},
+				{Key: "old", Value: bson.D{
+					{Key: "$arrayElemAt", Value: bson.A{
+						currencyField,
+						old,
 					}},
-				},
-				{"current",
-					bson.D{{"$arrayElemAt",
-						bson.A{currencyField, -1},
+				}},
+				{Key: "current", Value: bson.D{
+					{Key: "$arrayElemAt", Value: bson.A{
+						currencyField,
+						-1,
 					}},
-				},
-			},
-		}},
-		bson.D{{"$match",
-			bson.D{{"old", bson.D{{"$gt", limit}}}},
-		}},
-		bson.D{{"$project",
-			bson.D{
-				{"name", true},
-				{"set", true},
-				{"old", true},
-				{"current", true},
-				{"collectornumber", true},
-				{"rate",
-					bson.D{{"$subtract",
-						bson.A{
-							bson.D{{"$divide",
-								bson.A{"$current",
-									bson.D{{"$divide",
-										bson.A{"$old", 100},
+				}},
+			}},
+		},
+		bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "old", Value: bson.D{
+					{Key: "$gt", Value: limit},
+				}},
+			}},
+		},
+		bson.D{
+			{Key: "$project", Value: bson.D{
+				{Key: "name", Value: true},
+				{Key: "set", Value: true},
+				{Key: "old", Value: true},
+				{Key: "current", Value: true},
+				{Key: "collectornumber", Value: true},
+				{Key: "rate", Value: bson.D{
+					{Key: "$subtract", Value: bson.A{
+						bson.D{
+							{Key: "$divide", Value: bson.A{
+								"$current",
+								bson.D{
+									{Key: "$divide", Value: bson.A{
+										"$old",
+										100,
 									}},
 								},
 							}},
-							100,
 						},
+						100,
 					}},
-				},
-			},
-		}},
-		bson.D{{"$sort",
-			bson.D{{"rate", sort}}}},
-		bson.D{{"$limit", 20}},
+				}},
+			}},
+		},
+		bson.D{
+			{Key: "$sort", Value: bson.D{
+				{Key: "rate", Value: sort},
+			}},
+		},
+		bson.D{
+			{Key: "$limit", Value: 20},
+		},
 	}
 	raise, _ := coll.storageAggregate(raisePipeline)
 
 	sraisePipeline := mongo.Pipeline{
-		bson.D{{"$project",
-			bson.D{
-				{"name", true},
-				{"code", true},
-				{"old",
-					bson.D{{"$arrayElemAt",
-						bson.A{currencyField, old},
+		bson.D{
+			{Key: "$project", Value: bson.D{
+				{Key: "name", Value: true},
+				{Key: "code", Value: true},
+				{Key: "old", Value: bson.D{
+					{Key: "$arrayElemAt", Value: bson.A{
+						currencyField,
+						old,
 					}},
-				},
-				{"current",
-					bson.D{{"$arrayElemAt",
-						bson.A{currencyField, -1},
+				}},
+				{Key: "current", Value: bson.D{
+					{Key: "$arrayElemAt", Value: bson.A{
+						currencyField,
+						-1,
 					}},
-				},
+				}},
 			},
-		}},
-		bson.D{{"$match",
-			bson.D{{"old", bson.D{{"$gt", limit}}}},
-		}},
-		bson.D{{"$project",
-			bson.D{
-				{"name", true},
-				{"code", true},
-				{"old", true},
-				{"current", true},
-				{"rate",
-					bson.D{{"$subtract",
-						bson.A{
-							bson.D{{"$divide",
-								bson.A{"$current",
-									bson.D{{"$divide",
-										bson.A{"$old", 100},
+			}},
+		bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "old", Value: bson.D{
+					{Key: "$gt", Value: limit},
+				}},
+			}},
+		},
+		bson.D{
+			{Key: "$project", Value: bson.D{
+				{Key: "name", Value: true},
+				{Key: "code", Value: true},
+				{Key: "old", Value: true},
+				{Key: "current", Value: true},
+				{Key: "rate", Value: bson.D{
+					{Key: "$subtract", Value: bson.A{
+						bson.D{
+							{Key: "$divide", Value: bson.A{
+								"$current",
+								bson.D{
+									{Key: "$divide", Value: bson.A{
+										"$old",
+										100,
 									}},
 								},
 							}},
-							100,
 						},
+						100,
 					}},
-				},
-			},
-		}},
-		bson.D{{"$sort",
-			bson.D{{"rate", sort}}}},
-		bson.D{{"$limit", 10}},
+				}},
+			}},
+		},
+		bson.D{
+			{Key: "$sort", Value: bson.D{
+				{Key: "rate", Value: sort},
+			}},
+		},
+		bson.D{
+			{Key: "$limit", Value: 10},
+		},
 	}
 	sraise, _ := setcoll.storageAggregate(sraisePipeline)
 
 	// percentage coloring
-	var pColor string
+	pColor := Green
 	if sort == 1 {
 		pColor = Red
-	} else {
-		pColor = Green
 	}
 
 	fmt.Printf("%sCards%s\n", Purple, Reset)
 	// print each card
 	for _, e := range raise {
-		fmt.Printf("%s%+.0f%%%s %s %s(%s/%s)%s (%.2f->%s%.2f%s%s) \n", pColor, e["rate"], Reset, e["name"], Yellow, e["set"], e["collectornumber"], Reset, e["old"], Green, e["current"], getCurrency(), Reset)
+		fmt.Printf(
+			"%s%+.0f%%%s %s %s(%s/%s)%s (%.2f->%s%.2f%s%s) \n",
+			pColor,
+			e["rate"],
+			Reset,
+			e["name"],
+			Yellow,
+			e["set"],
+			e["collectornumber"],
+			Reset,
+			e["old"],
+			Green,
+			e["current"],
+			getCurrency(),
+			Reset,
+		)
 	}
 
 	fmt.Printf("\n%sSets%s\n", Purple, Reset)
 	for _, e := range sraise {
-		fmt.Printf("%s%+.0f%%%s %s %s(%s)%s (%.2f->%s%.2f%s%s) \n", pColor, e["rate"], Reset, e["name"], Yellow, e["code"], Reset, e["old"], Green, e["current"], getCurrency(), Reset)
+		fmt.Printf(
+			"%s%+.0f%%%s %s %s(%s)%s (%.2f->%s%.2f%s%s) \n",
+			pColor,
+			e["rate"],
+			Reset,
+			e["name"],
+			Yellow,
+			e["code"],
+			Reset,
+			e["old"],
+			Green,
+			e["current"],
+			getCurrency(),
+			Reset,
+		)
 	}
 	return nil
-
 }

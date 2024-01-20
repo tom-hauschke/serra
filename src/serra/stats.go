@@ -30,19 +30,51 @@ var statsCmd = &cobra.Command{
 		// Value and Card Numbers
 		stats, _ := coll.storageAggregate(mongo.Pipeline{
 			bson.D{
-				{"$group", bson.D{
-					{"_id", nil},
-					{"value", bson.D{{"$sum", bson.D{{"$multiply", bson.A{getCurrencyField(false), "$serra_count"}}}}}},
-					{"value_foil", bson.D{{"$sum", bson.D{{"$multiply", bson.A{getCurrencyField(true), "$serra_count_foil"}}}}}},
-					{"count", bson.D{{"$sum", bson.D{{"$multiply", bson.A{1.0, "$serra_count"}}}}}},
-					{"count_foil", bson.D{{"$sum", "$serra_count_foil"}}},
-					{"rarity", bson.D{{"$sum", "$rarity"}}},
-					{"unique", bson.D{{"$sum", 1}}},
+				{Key: "$group", Value: bson.D{
+					{Key: "_id", Value: nil},
+					{Key: "value", Value: bson.D{
+						{Key: "$sum", Value: bson.D{
+							{Key: "$multiply", Value: bson.A{
+								getCurrencyField(false),
+								"$serra_count",
+							}},
+						}},
+					}},
+					{Key: "value_foil", Value: bson.D{
+						{Key: "$sum", Value: bson.D{
+							{Key: "$multiply", Value: bson.A{
+								getCurrencyField(true),
+								"$serra_count_foil",
+							}},
+						}},
+					}},
+					{Key: "count", Value: bson.D{
+						{Key: "$sum", Value: bson.D{
+							{Key: "$multiply", Value: bson.A{
+								1.0,
+								"$serra_count",
+							}},
+						}},
+					}},
+					{Key: "count_foil", Value: bson.D{
+						{Key: "$sum", Value: "$serra_count_foil"},
+					}},
+					{Key: "rarity", Value: bson.D{
+						{Key: "$sum", Value: "$rarity"},
+					}},
+					{Key: "unique", Value: bson.D{
+						{Key: "$sum", Value: 1},
+					}},
 				}},
 			},
 			bson.D{
-				{"$addFields", bson.D{
-					{"count_all", bson.D{{"$sum", bson.A{"$count", "$count_foil"}}}},
+				{Key: "$addFields", Value: bson.D{
+					{Key: "count_all", Value: bson.D{
+						{Key: "$sum", Value: bson.A{
+							"$count",
+							"$count_foil",
+						}},
+					}},
 				}},
 			},
 		})
@@ -54,13 +86,18 @@ var statsCmd = &cobra.Command{
 
 		reserved, _ := coll.storageAggregate(mongo.Pipeline{
 			bson.D{
-				{"$match", bson.D{
-					{"reserved", true}}}},
+				{Key: "$match", Value: bson.D{
+					{Key: "reserved", Value: true},
+				}},
+			},
 			bson.D{
-				{"$group", bson.D{
-					{"_id", nil},
-					{"count", bson.D{{"$sum", 1}}},
-				}}},
+				{Key: "$group", Value: bson.D{
+					{Key: "_id", Value: nil},
+					{Key: "count", Value: bson.D{
+						{Key: "$sum", Value: 1},
+					}},
+				}},
+			},
 		})
 
 		var count_reserved int32
@@ -72,14 +109,23 @@ var statsCmd = &cobra.Command{
 		// Rarities
 		rar, _ := coll.storageAggregate(mongo.Pipeline{
 			bson.D{
-				{"$group", bson.D{
-					{"_id", "$rarity"},
-					{"count", bson.D{{"$sum", bson.D{{"$multiply", bson.A{1.0, "$serra_count"}}}}}},
-				}}},
+				{Key: "$group", Value: bson.D{
+					{Key: "_id", Value: "$rarity"},
+					{Key: "count", Value: bson.D{
+						{Key: "$sum", Value: bson.D{
+							{Key: "$multiply", Value: bson.A{
+								1.0,
+								"$serra_count",
+							}},
+						}},
+					}},
+				}},
+			},
 			bson.D{
-				{"$sort", bson.D{
-					{"_id", 1},
-				}}},
+				{Key: "$sort", Value: bson.D{
+					{Key: "_id", Value: 1},
+				}},
+			},
 		})
 		ri := convertRarities(rar)
 		fmt.Printf("\n%sRarity%s\n", Green, Reset)
@@ -91,17 +137,30 @@ var statsCmd = &cobra.Command{
 		// Colors
 		sets, _ := coll.storageAggregate(mongo.Pipeline{
 			bson.D{
-				{"$match", bson.D{
-					{"coloridentity", bson.D{{"$size", 1}}}}}},
+				{Key: "$match", Value: bson.D{
+					{Key: "coloridentity", Value: bson.D{
+						{Key: "$size", Value: 1},
+					}},
+				}},
+			},
 			bson.D{
-				{"$group", bson.D{
-					{"_id", "$coloridentity"},
-					{"count", bson.D{{"$sum", bson.D{{"$multiply", bson.A{1.0, "$serra_count"}}}}}},
-				}}},
+				{Key: "$group", Value: bson.D{
+					{Key: "_id", Value: "$coloridentity"},
+					{Key: "count", Value: bson.D{
+						{Key: "$sum", Value: bson.D{
+							{Key: "$multiply", Value: bson.A{
+								1.0,
+								"$serra_count",
+							}},
+						}},
+					}},
+				}},
+			},
 			bson.D{
-				{"$sort", bson.D{
-					{"count", -1},
-				}}},
+				{Key: "$sort", Value: bson.D{
+					{Key: "count", Value: -1},
+				}},
+			},
 		})
 
 		fmt.Printf("\n%sColors%s\n", Green, Reset)
@@ -113,16 +172,21 @@ var statsCmd = &cobra.Command{
 		// Artists
 		artists, _ := coll.storageAggregate(mongo.Pipeline{
 			bson.D{
-				{"$group", bson.D{
-					{"_id", "$artist"},
-					{"count", bson.D{{"$sum", 1}}},
-				}}},
+				{Key: "$group", Value: bson.D{
+					{Key: "_id", Value: "$artist"},
+					{Key: "count", Value: bson.D{
+						{Key: "$sum", Value: 1},
+					}},
+				}},
+			},
 			bson.D{
-				{"$sort", bson.D{
-					{"count", -1},
-				}}},
+				{Key: "$sort", Value: bson.D{
+					{Key: "count", Value: -1},
+				}},
+			},
 			bson.D{
-				{"$limit", 10}},
+				{Key: "$limit", Value: 10},
+			},
 		})
 		fmt.Printf("\n%sTop Artists%s\n", Green, Reset)
 		for _, artist := range artists {
@@ -132,15 +196,18 @@ var statsCmd = &cobra.Command{
 		// Mana Curve of Collection
 		cmc, _ := coll.storageAggregate(mongo.Pipeline{
 			bson.D{
-				{"$group", bson.D{
-					{"_id", "$cmc"},
-					// {"count", bson.D{{"$sum", bson.D{{"$multiply", bson.A{1.0, "$serra_count"}}}}}},
-					{"count", bson.D{{"$sum", 1}}},
-				}}},
+				{Key: "$group", Value: bson.D{
+					{Key: "_id", Value: "$cmc"},
+					{Key: "count", Value: bson.D{
+						{Key: "$sum", Value: 1},
+					}},
+				}},
+			},
 			bson.D{
-				{"$sort", bson.D{
-					{"_id", 1},
-				}}},
+				{Key: "$sort", Value: bson.D{
+					{Key: "_id", Value: 1},
+				}},
+			},
 		})
 		fmt.Printf("\n%sMana Curve%s\n", Green, Reset)
 		for _, mc := range cmc {
@@ -158,21 +225,31 @@ var statsCmd = &cobra.Command{
 		}
 		caot, _ := coll.storageAggregate(mongo.Pipeline{
 			bson.D{
-				{"$project", bson.D{
-					{"month", bson.D{
-						{"$month", "$serra_created"}}},
-					{"year", bson.D{
-						{"$year", "$serra_created"}},
+				{Key: "$project", Value: bson.D{
+					{Key: "month", Value: bson.D{
+						{Key: "$month", Value: "$serra_created"},
 					}},
-				}},
-			bson.D{
-				{"$group", bson.D{
-					{"_id", bson.D{{"month", "$month"}, {"year", "$year"}}},
-					{"count", bson.D{{"$sum", 1}}},
+					{Key: "year", Value: bson.D{
+						{Key: "$year", Value: "$serra_created"},
+					}},
 				}},
 			},
 			bson.D{
-				{"$sort", bson.D{{"_id.year", 1}, {"_id.month", 1}}},
+				{Key: "$group", Value: bson.D{
+					{Key: "_id", Value: bson.D{
+						{Key: "month", Value: "$month"},
+						{Key: "year", Value: "$year"},
+					}},
+					{Key: "count", Value: bson.D{
+						{Key: "$sum", Value: 1},
+					}},
+				}},
+			},
+			bson.D{
+				{Key: "$sort", Value: bson.D{
+					{Key: "_id.year", Value: 1},
+					{Key: "_id.month", Value: 1},
+				}},
 			},
 		})
 		for _, mo := range caot {
@@ -199,14 +276,19 @@ var statsCmd = &cobra.Command{
 			foilValue = 0
 		}
 		totalValue := normalValue + foilValue
+		averageValue := 0.0
+		if count_all > 0 {
+			averageValue = totalValue/count_all 
+		}
 		fmt.Printf("Total: %s%.2f%s%s\n", Pink, totalValue, getCurrency(), Reset)
 		fmt.Printf("Normal: %s%.2f%s%s\n", Pink, normalValue, getCurrency(), Reset)
 		fmt.Printf("Foils: %s%.2f%s%s\n", Pink, foilValue, getCurrency(), Reset)
-		fmt.Printf("Average Card: %s%.2f%s%s\n", Pink, totalValue/count_all, getCurrency(), Reset)
-		total, _ := totalcoll.storageFindTotal()
-
-		fmt.Printf("History: \n")
-		showPriceHistory(total.Value, "* ", true)
+		fmt.Printf("Average Card: %s%.2f%s%s\n", Pink, averageValue, getCurrency(), Reset)
+		total, err := totalcoll.storageFindTotal()
+		if err == nil {
+			fmt.Printf("History: \n")
+			showPriceHistory(total.Value, "* ", true)
+		}
 		return nil
 	},
 }

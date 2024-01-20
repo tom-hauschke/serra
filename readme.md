@@ -1,13 +1,15 @@
 # serra
 
-Serra is my personal *Magic: The Gathering* collection tracker.
+Forked from noqqe/serra
+
+Serra is my personal _Magic: The Gathering_ collection tracker.
 
 It began as a holiday project in winter 2021/2022 because I was frustrated of
 Collection Tracker Websites that are:
 
-* Pain to use
-* Want ~$10 a month
-* Don't have the features I want
+- Pain to use
+- Want ~$10 a month
+- Don't have the features I want
 
 So I started my own Collection Tracker using [Golang](https://golang.org),
 [MongoDB](https://mongodb.com) and [Scryfall](https://scryfall.com) to have
@@ -15,15 +17,15 @@ an overview in what cards you own and what value they have.
 
 **What Serra does**
 
-* Tracks prices
-* Calculates statistics
-* Query/filter all of your cards
-* Shows what cards/sets do best in value development.
+- Tracks prices
+- Calculates statistics
+- Query/filter all of your cards
+- Shows what cards/sets do best in value development.
 
 **What Serra does not**
 
-* Does not care about conditions (NM, M, GD...)
-* Does not track etched cards. Only normal and foil.
+- Does not care about conditions (NM, M, GD...)
+- Does not track etched cards. Only normal and foil.
 
 # Quickstart
 
@@ -39,8 +41,8 @@ on Linux/BSD/Windows you can download binaries from
 
 ## Spin up Database
 
-To run serra, a MongoDB Database is required. The best way is to setup one by yourself. Any way it connects is fine. 
-    
+To run serra, a MongoDB Database is required. The best way is to setup one by yourself. Any way it connects is fine.
+
 You can also use the docker-compose setup included in this Repo:
 
     docker-compose up -d
@@ -62,6 +64,7 @@ Start exploring :) (the more cards you add, the more fun it is)
 # Usage
 
 The overall usage is described in `--help` text. But below are some examples.
+
 ```
 Usage:
   serra [command]
@@ -163,7 +166,8 @@ one> 3
 1x "Apostle of Invasion" (uncommon, 0.03 USD) added to Collection.
 ```
 
-It also supports ranges of cards 
+It also supports ranges of cards
+
 ```
 dmr> 1-3
 1x "Auramancer" (common, 0.02$) added to Collection.
@@ -179,10 +183,11 @@ with this approach then Smartphone scanners.
 If you want to upgrade, go to [releases](https://github.com/noqqe/serra/releases) Page and download the corresponding release for your platform.
 
 For example:
+
 ```
 wget https://github.com/noqqe/serra/releases/download/3.10.0/serra_Darwin_x86_64.tar.gz
 tar zxfv serra_Darwin_x86_64.tar.gz
-./serra 
+./serra
 ```
 
 ## Upgrade Notes
@@ -191,10 +196,10 @@ tar zxfv serra_Darwin_x86_64.tar.gz
 
 No extra steps needed. Only new Webinterface and Foil support
 
-### 1.5.3 -> 2.0.0 
+### 1.5.3 -> 2.0.0
 
 In this stage of the development of serra, I was breaking the original
-database "schema" without migration. 
+database "schema" without migration.
 
 Sadly you need to export the cards from the mongodb and import it again using `serra add ` commands
 

@@ -35,17 +35,19 @@ var (
 )
 
 func Logger() *log.Logger {
-
 	l := log.New(os.Stderr)
 	l.SetReportTimestamp(false)
 	return l
 }
 
 func modifyCardCount(coll *Collection, c *Card, amount int64, foil bool) error {
-
 	// find already existing card
-	sort := bson.D{{"_id", 1}}
-	searchFilter := bson.D{{"_id", c.ID}}
+	sort := bson.D{
+		{Key: "_id", Value: 1},
+	}
+	searchFilter := bson.D{
+		{Key: "_id", Value: c.ID},
+	}
 	l := Logger()
 	storedCards, err := coll.storageFind(searchFilter, sort, 0, 0)
 	if err != nil {
@@ -88,8 +90,13 @@ func modifyCardCount(coll *Collection, c *Card, amount int64, foil bool) error {
 }
 
 func findCardByCollectorNumber(coll *Collection, setCode string, collectorNumber string) (*Card, error) {
-	sort := bson.D{{"_id", 1}}
-	searchFilter := bson.D{{"set", setCode}, {"collectornumber", collectorNumber}}
+	sort := bson.D{
+		{Key: "_id", Value: 1},
+	}
+	searchFilter := bson.D{
+		{Key: "set", Value: setCode},
+		{Key: "collectornumber", Value: collectorNumber},
+	}
 	storedCards, err := coll.storageFind(searchFilter, sort, 0, 0)
 	if err != nil {
 		return &Card{}, err
@@ -126,7 +133,11 @@ func missing(a, b []string) []string {
 }
 
 func findSetByCode(coll *Collection, setcode string) (*Set, error) {
-	storedSets, err := coll.storageFindSet(bson.D{{"code", setcode}}, bson.D{{"_id", 1}})
+	storedSets, err := coll.storageFindSet(bson.D{
+		{Key: "code", Value: setcode},
+	}, bson.D{
+		{Key: "_id", Value: 1},
+	})
 	if err != nil {
 		return &Set{}, err
 	}
@@ -211,11 +222,40 @@ func showPriceHistory(prices []PriceEntry, prefix string, total bool) {
 		}
 
 		if value > before && before != 0 {
-			fmt.Printf("%s%s%s %.2f%s%s (%+.2f%%, %+.2f%s)\n", prefix, stringToTime(e.Date), Green, value, getCurrency(), Reset, (value/before*100)-100, value-before, getCurrency())
+			fmt.Printf(
+				"%s%s%s %.2f%s%s (%+.2f%%, %+.2f%s)\n",
+				prefix,
+				stringToTime(e.Date),
+				Green,
+				value,
+				getCurrency(),
+				Reset,
+				(value/before*100)-100,
+				value-before,
+				getCurrency(),
+			)
 		} else if value < before {
-			fmt.Printf("%s%s%s %.2f%s%s (%+.2f%%, %+.2f%s)\n", prefix, stringToTime(e.Date), Red, value, getCurrency(), Reset, (value/before*100)-100, value-before, getCurrency())
+			fmt.Printf(
+				"%s%s%s %.2f%s%s (%+.2f%%, %+.2f%s)\n",
+				prefix,
+				stringToTime(e.Date),
+				Red,
+				value,
+				getCurrency(),
+				Reset,
+				(value/before*100)-100,
+				value-before,
+				getCurrency(),
+			)
 		} else {
-			fmt.Printf("%s%s %.2f%s%s\n", prefix, stringToTime(e.Date), value, getCurrency(), Reset)
+			fmt.Printf(
+				"%s%s %.2f%s%s\n",
+				prefix,
+				stringToTime(e.Date),
+				value,
+				getCurrency(),
+				Reset,
+			)
 		}
 		before = value
 	}

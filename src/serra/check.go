@@ -50,7 +50,15 @@ func checkCards(cards []string, detail bool) error {
 		}
 
 		// Check if card is already in collection
-		co, err := coll.storageFind(bson.D{{"set", setName}, {"collectornumber", collectorNumber}}, bson.D{}, 0, 0)
+		co, err := coll.storageFind(
+			bson.D{
+				{Key: "set", Value: setName},
+				{Key: "collectornumber", Value: collectorNumber},
+			},
+			bson.D{},
+			0,
+			0,
+		)
 		if err != nil {
 			l.Warn(err)
 			continue
@@ -63,7 +71,7 @@ func checkCards(cards []string, detail bool) error {
 			continue
 		} else {
 			if detail {
-				// fetch card from scyrfall if --detail was given
+				// fetch card from scryfall if --detail was given
 				c, _ := fetchCard(setName, collectorNumber)
 				fmt.Printf("MISSING %s \"%s\" (%s, %.2f%s)", card, c.Name, c.Rarity, c.getValue(foil), getCurrency())
 			} else {
@@ -72,6 +80,5 @@ func checkCards(cards []string, detail bool) error {
 			}
 		}
 	}
-	storageDisconnect(client)
 	return nil
 }

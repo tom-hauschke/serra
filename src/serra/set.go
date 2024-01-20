@@ -34,20 +34,43 @@ otherwise you'll get a list of sets as a search result.`,
 }
 
 func Sets(sort string) []primitive.M {
-
 	client := storageConnect()
 	coll := &Collection{client.Database("serra").Collection("cards")}
 	defer storageDisconnect(client)
 
 	groupStage := bson.D{
-		{"$group", bson.D{
-			{"_id", "$setname"},
-			{"value", bson.D{{"$sum", bson.D{{"$multiply", bson.A{getCurrencyField(false), "$serra_count"}}}}}},
-			{"value_foil", bson.D{{"$sum", bson.D{{"$multiply", bson.A{getCurrencyField(true), "$serra_count_foil"}}}}}},
-			{"count", bson.D{{"$sum", bson.D{{"$multiply", bson.A{1.0, "$serra_count"}}}}}},
-			{"unique", bson.D{{"$sum", 1}}},
-			{"code", bson.D{{"$last", "$set"}}},
-			{"release", bson.D{{"$last", "$releasedat"}}},
+		{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$setname"},
+			{Key: "value", Value: bson.D{
+				{Key: "$sum", Value: bson.D{
+					{Key: "$multiply", Value: bson.A{getCurrencyField(false), "$serra_count"}},
+				}},
+			}},
+			{Key: "value_foil", Value: bson.D{
+				{Key: "$sum", Value: bson.D{
+					{Key: "$multiply", Value: bson.A{
+						getCurrencyField(true),
+						"$serra_count_foil",
+					}},
+				}},
+			}},
+			{Key: "count", Value: bson.D{
+				{Key: "$sum", Value: bson.D{
+					{Key: "$multiply", Value: bson.A{
+						1.0,
+						"$serra_count",
+					}},
+				}},
+			}},
+			{Key: "unique", Value: bson.D{
+				{Key: "$sum", Value: 1},
+			}},
+			{Key: "code", Value: bson.D{
+				{Key: "$last", Value: "$set"},
+			}},
+			{Key: "release", Value: bson.D{
+				{Key: "$last", Value: "$releasedat"},
+			}},
 		}},
 	}
 
@@ -55,14 +78,16 @@ func Sets(sort string) []primitive.M {
 	switch sort {
 	case "release":
 		sortStage = bson.D{
-			{"$sort", bson.D{
-				{"release", 1},
-			}}}
+			{Key: "$sort", Value: bson.D{
+				{Key: "release", Value: 1},
+			}},
+		}
 	case "value":
 		sortStage = bson.D{
-			{"$sort", bson.D{
-				{"value", 1},
-			}}}
+			{Key: "$sort", Value: bson.D{
+				{Key: "value", Value: 1},
+			}},
+		}
 	}
 
 	sets, _ := coll.storageAggregate(mongo.Pipeline{groupStage, sortStage})
@@ -71,32 +96,52 @@ func Sets(sort string) []primitive.M {
 }
 
 func showSetList(sets []primitive.M) {
-
 	client := storageConnect()
 	setscoll := &Collection{client.Database("serra").Collection("sets")}
 
 	for _, set := range sets {
 		setobj, _ := findSetByCode(setscoll, set["code"].(string))
-		fmt.Printf("* %s %s%s%s (%s%s%s)\n", set["release"].(string)[0:4], Purple, set["_id"], Reset, Cyan, set["code"], Reset)
-		fmt.Printf("  Cards: %s%d/%d%s Total: %.0f \n", Yellow, set["unique"], setobj.CardCount, Reset, set["count"])
-		fmt.Printf("  Value: %s%.2f%s%s\n", Pink, set["value"], getCurrency(), Reset)
+		fmt.Printf(
+			"* %s %s%s%s (%s%s%s)\n",
+			set["release"].(string)[0:4],
+			Purple,
+			set["_id"],
+			Reset,
+			Cyan,
+			set["code"],
+			Reset,
+		)
+		fmt.Printf(
+			"  Cards: %s%d/%d%s Total: %.0f \n",
+			Yellow,
+			set["unique"],
+			setobj.CardCount,
+			Reset,
+			set["count"],
+		)
+		fmt.Printf(
+			"  Value: %s%.2f%s%s\n",
+			Pink,
+			set["value"],
+			getCurrency(),
+			Reset,
+		)
 		fmt.Println()
 	}
 }
 
 func ShowSet(setname string) error {
-
 	client := storageConnect()
 	coll := &Collection{client.Database("serra").Collection("cards")}
 	l := Logger()
 	defer storageDisconnect(client)
 
 	// fetch all cards in set ordered by currently used currency
-	cardSortCurrency := bson.D{{"prices.usd", -1}}
+	cardSortCurrency := bson.D{{Key: "prices.usd", Value: -1}}
 	if getCurrency() == EUR {
-		cardSortCurrency = bson.D{{"prices.eur", -1}}
+		cardSortCurrency = bson.D{{Key: "prices.eur", Value: -1}}
 	}
-	cards, err := coll.storageFind(bson.D{{"set", setname}}, cardSortCurrency, 0, 0)
+	cards, err := coll.storageFind(bson.D{{Key: "set", Value: setname}}, cardSortCurrency, 0, 0)
 	if (err != nil) || len(cards) == 0 {
 		l.Errorf("Set %s not found or no card in your collection.", setname)
 		return err
@@ -104,41 +149,78 @@ func ShowSet(setname string) error {
 
 	// fetch set informations
 	setcoll := &Collection{client.Database("serra").Collection("sets")}
-	sets, _ := setcoll.storageFindSet(bson.D{{"code", setname}}, bson.D{{"_id", 1}})
+	sets, _ := setcoll.storageFindSet(bson.D{{Key: "code", Value: setname}}, bson.D{{Key: "_id", Value: 1}})
 
 	// set values
 	matchStage := bson.D{
-		{"$match", bson.D{
-			{"set", setname},
+		{Key: "$match", Value: bson.D{
+			{Key: "set", Value: setname},
 		}},
 	}
 	groupStage := bson.D{
-		{"$group", bson.D{
-			{"_id", "$setname"},
-			{"value", bson.D{{"$sum", bson.D{{"$multiply", bson.A{getCurrencyField(false), "$serra_count"}}}}}},
-			{"value_foil", bson.D{{"$sum", bson.D{{"$multiply", bson.A{getCurrencyField(true), "$serra_count_foil"}}}}}},
-			{"count", bson.D{{"$sum", bson.D{{"$multiply", bson.A{1.0, "$serra_count"}}}}}},
-			{"count_foil", bson.D{{"$sum", bson.D{{"$multiply", bson.A{1.0, "$serra_count_foil"}}}}}},
+		{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$setname"},
+			{Key: "value", Value: bson.D{
+				{Key: "$sum", Value: bson.D{
+					{Key: "$multiply", Value: bson.A{
+						getCurrencyField(false),
+						"$serra_count",
+					}},
+				}},
+			}},
+			{Key: "value_foil", Value: bson.D{
+				{Key: "$sum", Value: bson.D{
+					{Key: "$multiply", Value: bson.A{
+						getCurrencyField(true),
+						"$serra_count_foil",
+					}},
+				}},
+			}},
+			{Key: "count", Value: bson.D{
+				{Key: "$sum", Value: bson.D{
+					{Key: "$multiply", Value: bson.A{
+						1.0,
+						"$serra_count",
+					}},
+				}},
+			}},
+			{Key: "count_foil", Value: bson.D{
+				{Key: "$sum", Value: bson.D{
+					{Key: "$multiply", Value: bson.A{
+						1.0,
+						"$serra_count_foil",
+					}},
+				}},
+			}},
 		}},
 	}
 	stats, _ := coll.storageAggregate(mongo.Pipeline{matchStage, groupStage})
 
 	// set rarities
 	matchStage = bson.D{
-		{"$match", bson.D{
-			{"set", setname},
+		{Key: "$match", Value: bson.D{
+			{Key: "set", Value: setname},
 		}},
 	}
 	groupStage = bson.D{
-		{"$group", bson.D{
-			{"_id", "$rarity"},
-			{"count", bson.D{{"$sum", bson.D{{"$multiply", bson.A{1.0, "$serra_count"}}}}}},
-		}}}
+		{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$rarity"},
+			{Key: "count", Value: bson.D{
+				{Key: "$sum", Value: bson.D{
+					{Key: "$multiply", Value: bson.A{
+						1.0,
+						"$serra_count",
+					}},
+				}},
+			}},
+		}},
+	}
 
 	sortStage := bson.D{
-		{"$sort", bson.D{
-			{"_id", 1},
-		}}}
+		{Key: "$sort", Value: bson.D{
+			{Key: "_id", Value: 1},
+		}},
+	}
 	rar, _ := coll.storageAggregate(mongo.Pipeline{matchStage, groupStage, sortStage})
 
 	ri := convertRarities(rar)
@@ -180,17 +262,20 @@ func ShowSet(setname string) error {
 
 	fmt.Printf("\n%sMost valuable cards%s\n", Pink, Reset)
 
-	// Calc counter to show 10 cards or less
-	ccards := 0
-	if len(cards) < 10 {
-		ccards = len(cards)
-	} else {
-		ccards = 10
-	}
-
-	for i := 0; i < ccards; i++ {
+	for i := 0; i < 10 && i < len(cards); i++ {
 		card := cards[i]
-		fmt.Printf("* %s%s%s (%s/%s) %s%.2f%s%s\n", Purple, card.Name, Reset, sets[0].Code, card.CollectorNumber, Yellow, card.getValue(false), getCurrency(), Reset)
+		fmt.Printf(
+			"* %s%s%s (%s/%s) %s%.2f%s%s\n",
+			Purple,
+			card.Name,
+			Reset,
+			sets[0].Code,
+			card.CollectorNumber,
+			Yellow,
+			card.getValue(false),
+			getCurrency(),
+			Reset,
+		)
 	}
 
 	return nil

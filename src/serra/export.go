@@ -54,7 +54,14 @@ func exportTCGPowertools(cards []Card) {
 
 	fmt.Println("cardmarketId,quantity,name,set,condition,language,isFoil,isPlayset,price,comment")
 	for _, card := range cards {
-		fmt.Printf("%.0f,%d,%s,%s,EX,German,false,false,%.2f,\n", card.CardmarketID, card.SerraCount, card.Name, card.SetName, card.getValue(false))
+		fmt.Printf(
+			"%.0f,%d,%s,%s,EX,German,false,false,%.2f,\n",
+			card.CardmarketID,
+			card.SerraCount,
+			card.Name,
+			card.SetName,
+			card.getValue(false),
+		)
 	}
 }
 

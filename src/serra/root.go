@@ -36,7 +36,6 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-
 	l := Logger()
 	if err := rootCmd.Execute(); err != nil {
 		l.Fatal(err)

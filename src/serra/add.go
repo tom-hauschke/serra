@@ -113,7 +113,10 @@ func addCards(cards []string, unique bool, count int64) error {
 		// Extract collector number and set name from card input & trim any leading 0 from collector number
 
 		if !strings.Contains(card, "/") {
-			l.Errorf("Invalid card format %s. Needs to be set/collector number i.e. \"usg/13\"", card)
+			l.Errorf(
+				"Invalid card format %s. Needs to be set/collector number i.e. \"usg/13\"",
+				card,
+			)
 			continue
 		}
 
@@ -121,12 +124,23 @@ func addCards(cards []string, unique bool, count int64) error {
 		collectorNumber := strings.TrimLeft(strings.Split(card, "/")[1], "0")
 
 		if collectorNumber == "" {
-			l.Errorf("Invalid card format %s. Needs to be set/collector number i.e. \"usg/13\"", card)
+			l.Errorf(
+				"Invalid card format %s. Needs to be set/collector number i.e. \"usg/13\"",
+				card,
+			)
 			continue
 		}
 
 		// Check if card is already in collection
-		co, err := coll.storageFind(bson.D{{"set", setName}, {"collectornumber", collectorNumber}}, bson.D{}, 0, 0)
+		co, err := coll.storageFind(
+			bson.D{
+				{Key: "set", Value: setName},
+				{Key: "collectornumber", Value: collectorNumber},
+			},
+			bson.D{},
+			0,
+			0,
+		)
 		if err != nil {
 			l.Error(err)
 			continue
@@ -136,7 +150,14 @@ func addCards(cards []string, unique bool, count int64) error {
 			c := co[0]
 
 			if unique {
-				l.Warnf("%dx \"%s\" (%s, %.2f%s) not added, because it already exists", count, c.Name, c.Rarity, c.getValue(foil), getCurrency())
+				l.Warnf(
+					"%dx \"%s\" (%s, %.2f%s) not added, because it already exists",
+					count,
+					c.Name,
+					c.Rarity,
+					c.getValue(foil),
+					getCurrency(),
+				)
 				continue
 			}
 
@@ -173,6 +194,5 @@ func addCards(cards []string, unique bool, count int64) error {
 			}
 		}
 	}
-	storageDisconnect(client)
 	return nil
 }
